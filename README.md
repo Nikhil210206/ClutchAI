@@ -3,8 +3,7 @@
 > An **agentic** productivity companion that doesn't just remind you — it **plans,
 > prioritizes, and takes real action** before your deadlines slip.
 
-Built for the **Vibe2Ship** hackathon (Problem Statement 1). ClutchAI turns one
-messy sentence — *"Essay due Friday and I need to email my prof for an extension"* —
+ClutchAI turns one messy sentence — *"Essay due Friday and I need to email my prof for an extension"* —
 into a concrete plan with **real Google Calendar blocks**, a **real Gmail draft**,
 and a **first-draft deliverable**, then shows you exactly *"Here's what I handled
 for you."*
