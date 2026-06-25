@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ActionLogEntry, Task } from "@/lib/types";
+import type { ActionLogEntry, Proposal, Task } from "@/lib/types";
 import { ActionLog } from "@/components/ActionLog";
 import { TaskBoard } from "@/components/TaskBoard";
 import { Composer } from "@/components/Composer";
 import { GoogleStatus } from "@/components/GoogleStatus";
+import { ProactiveScan } from "@/components/ProactiveScan";
 
 interface ChatMessage {
   role: "user" | "agent";
@@ -15,6 +16,7 @@ interface ChatMessage {
 interface AppState {
   tasks: Task[];
   actions: ActionLogEntry[];
+  proposals: Proposal[];
   google: { connected: boolean; configured: boolean; email: string | null };
 }
 
@@ -148,7 +150,8 @@ export default function Home() {
           <Composer onSend={send} disabled={busy} />
         </section>
 
-        <section className="flex min-h-0 flex-col gap-4">
+        <section className="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto">
+          <ProactiveScan proposals={state?.proposals ?? []} onChange={refreshState} />
           <ActionLog actions={state?.actions ?? []} />
           <TaskBoard tasks={state?.tasks ?? []} />
         </section>

@@ -38,3 +38,23 @@ export interface ActionLogEntry {
   taskId: string | null;
   createdAt: string;
 }
+
+/** A pre-staged action the proactive scan proposes for one-click approval. */
+export interface Proposal {
+  id: string;
+  taskId: string | null;
+  taskTitle: string;
+  /** Why this task is at risk — the agent's reasoning. */
+  risk: string;
+  action: "schedule_event" | "draft_email" | "generate_draft";
+  /** Action args (subset used depends on `action`). */
+  title?: string;
+  startISO?: string;
+  endISO?: string;
+  subject?: string;
+  body?: string;
+  to?: string;
+  content?: string;
+  status: "pending" | "approved" | "dismissed";
+  createdAt: string;
+}
