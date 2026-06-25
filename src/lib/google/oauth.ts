@@ -6,7 +6,11 @@
 // if multi-instance token sharing is ever needed.
 
 import { google } from "googleapis";
-import type { OAuth2Client } from "google-auth-library";
+
+// Derive the OAuth2 client type from googleapis itself, so it matches the
+// google-auth-library version googleapis bundles (avoids a duplicate-package
+// type conflict with the top-level google-auth-library).
+type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
 
 // Tight scopes: create calendar events + compose/insert Gmail drafts only.
 export const GOOGLE_SCOPES = [
