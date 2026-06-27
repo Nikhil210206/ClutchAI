@@ -48,12 +48,14 @@ export async function generateWithResilience(ai: GoogleGenAI, params: GenParams)
         lastErr = err;
         const status = statusOf(err);
         if (status !== 429 && status !== 503 && status !== 500) throw err;
-        const msg = String((err as { message?: string })?.message ?? "");
-        const hint = msg.match(/retry in ([\d.]+)s/i);
-        const backoff = hint
-          ? Math.min(Number(hint[1]) * 1000 + 250, 8000)
-          : Math.min(800 * 2 ** attempt, 6000);
-        // Stop if we're out of time or out of attempts for this model.
+
+        // On 429 (quota), retrying the SAME model burns more of the limited free
+        // quota and rarely clears within our budget. Move straight to the next
+        // model; if none left, fail fast so the caller shows "try again shortly".
+        if (status === 429) break;
+
+        // 503/500 are transient server errors — a short backoff often clears them.
+        const backoff = Math.min(700 * 2 ** attempt, 5000);
         if (attempt === MAX_RETRIES - 1) break;
         if (Date.now() + backoff > deadline) throw lastErr;
         await sleep(backoff);
