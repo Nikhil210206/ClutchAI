@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { Priority, Task } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { PanelHeader, EmptyState } from "@/components/ActionLog";
+import { cn } from "@/lib/utils";
 
 const PRIORITY_ORDER: Record<Priority, number> = {
   critical: 0,
@@ -11,10 +16,10 @@ const PRIORITY_ORDER: Record<Priority, number> = {
 };
 
 const PRIORITY_STYLE: Record<Priority, string> = {
-  critical: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  high: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  medium: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-  low: "bg-white/10 text-white/50 border-white/15",
+  critical: "border-rose-500/30 bg-rose-500/10 text-rose-300",
+  high: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+  medium: "border-sky-500/30 bg-sky-500/10 text-sky-300",
+  low: "border-border bg-muted text-muted-foreground",
 };
 
 export function TaskBoard({ tasks }: { tasks: Task[] }) {
@@ -23,22 +28,17 @@ export function TaskBoard({ tasks }: { tasks: Task[] }) {
   );
 
   return (
-    <div className="flex max-h-[42%] min-h-0 flex-col rounded-2xl border border-white/10 bg-white/[0.03]">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-        <h2 className="text-sm font-semibold">Prioritized plan</h2>
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/60">
-          {tasks.length} task{tasks.length === 1 ? "" : "s"}
-        </span>
-      </div>
-      <div className="scroll-thin flex-1 space-y-2 overflow-y-auto p-3">
-        {sorted.length === 0 ? (
-          <p className="px-1 py-4 text-center text-xs text-white/35">
-            Your prioritized subtasks appear here once the agent plans.
-          </p>
-        ) : (
-          sorted.map((t) => <TaskRow key={t.id} task={t} />)
-        )}
-      </div>
+    <div className="glass flex max-h-[44%] min-h-0 flex-col rounded-2xl">
+      <PanelHeader title="Prioritized plan" count={tasks.length} unit="task" />
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="space-y-2 p-3">
+          {sorted.length === 0 ? (
+            <EmptyState>Your prioritized subtasks appear here once the agent plans.</EmptyState>
+          ) : (
+            sorted.map((t) => <TaskRow key={t.id} task={t} />)
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
@@ -46,37 +46,48 @@ export function TaskBoard({ tasks }: { tasks: Task[] }) {
 function TaskRow({ task }: { task: Task }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-white/90">{task.title}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/50">
-            <span
-              className={`rounded border px-1.5 py-0.5 font-medium ${PRIORITY_STYLE[task.priority]}`}
+          <p className="text-[13px] font-medium leading-snug text-foreground/90">{task.title}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Badge
+              variant="outline"
+              className={cn("h-5 rounded-md px-1.5 text-[10px] font-medium capitalize", PRIORITY_STYLE[task.priority])}
             >
               {task.priority}
-            </span>
-            {task.dueDate && <span>due {task.dueDate}</span>}
-            {task.effortMinutes != null && <span>~{task.effortMinutes}m</span>}
+            </Badge>
+            {task.dueDate && <span className="tabular-nums">due {formatDue(task.dueDate)}</span>}
+            {task.effortMinutes != null && <span>· ~{task.effortMinutes}m</span>}
           </div>
           {task.reason && (
-            <p className="mt-1 text-[11px] italic text-white/45">{task.reason}</p>
+            <p className="mt-1.5 text-[11px] italic leading-snug text-muted-foreground/80">{task.reason}</p>
           )}
         </div>
         {task.draft && (
           <button
             onClick={() => setOpen((o) => !o)}
-            className="shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-2 py-1 text-[11px] text-white/70 hover:bg-white/[0.12]"
+            className="flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-accent"
           >
-            {open ? "Hide draft" : "View draft"}
+            Draft <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
           </button>
         )}
       </div>
       {open && task.draft && (
-        <pre className="scroll-thin mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-black/30 p-2 text-[11px] leading-relaxed text-white/75">
+        <pre className="scroll-thin mt-2 max-h-44 overflow-auto whitespace-pre-wrap rounded-md border bg-background/60 p-2.5 text-[11px] leading-relaxed text-foreground/75">
           {task.draft}
         </pre>
       )}
     </div>
   );
+}
+
+function formatDue(due: string): string {
+  try {
+    const d = new Date(due);
+    if (isNaN(d.getTime())) return due;
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch {
+    return due;
+  }
 }

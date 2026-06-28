@@ -1,5 +1,7 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 export function GoogleStatus({
   google,
   onChange,
@@ -8,30 +10,31 @@ export function GoogleStatus({
   onChange: () => void;
 }) {
   if (!google) {
-    return <div className="h-9 w-40 animate-pulse rounded-lg bg-white/5" />;
+    return <Skeleton className="h-9 w-44 rounded-lg" />;
   }
 
   if (!google.configured) {
     return (
-      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/45">
-        Google not configured · agent runs in simulated mode
+      <span className="rounded-lg border bg-card/50 px-3 py-2 text-xs text-muted-foreground">
+        Simulated mode · Google not configured
       </span>
     );
   }
 
   if (google.connected) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-        <span className="h-2 w-2 rounded-full bg-emerald-400" />
-        <span className="max-w-[160px] truncate">
-          {google.email ?? "Google connected"}
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">
+        <span className="relative flex size-2">
+          <span className="absolute inline-flex size-2 animate-ping rounded-full bg-emerald-400 opacity-60" />
+          <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
         </span>
+        <span className="max-w-[170px] truncate">{google.email ?? "Google connected"}</span>
         <button
           onClick={async () => {
             await fetch("/api/auth/google/disconnect", { method: "POST" });
             onChange();
           }}
-          className="ml-1 text-emerald-300/70 hover:text-emerald-200"
+          className="ml-1 text-emerald-400/70 transition-colors hover:text-emerald-200"
         >
           disconnect
         </button>
@@ -42,7 +45,7 @@ export function GoogleStatus({
   return (
     <a
       href="/api/auth/google"
-      className="flex items-center gap-2 rounded-lg border border-white/15 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 transition hover:brightness-95"
+      className="glass-btn inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-foreground"
     >
       <GoogleGlyph />
       Connect Calendar &amp; Gmail
@@ -52,7 +55,7 @@ export function GoogleStatus({
 
 function GoogleGlyph() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24">
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" />
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
       <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z" />

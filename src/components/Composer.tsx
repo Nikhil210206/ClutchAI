@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ArrowUp, Mic, Square } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Minimal typings for the Web Speech API (not in lib.dom by default).
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -27,6 +29,7 @@ export function Composer({
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const w = window as unknown as {
@@ -56,6 +59,14 @@ export function Composer({
     return () => rec.stop();
   }, []);
 
+  // Auto-grow the textarea.
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "0px";
+    ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
+  }, [text]);
+
   const toggleVoice = () => {
     const rec = recognitionRef.current;
     if (!rec) return;
@@ -80,23 +91,30 @@ export function Composer({
   };
 
   return (
-    <div className="border-t border-white/10 p-3">
-      <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-2 focus-within:border-indigo-400/50">
+    <div className="p-3">
+      <div
+        className={cn(
+          "glass-soft flex items-end gap-2 rounded-2xl p-2 transition-all",
+          "focus-within:border-primary/40 focus-within:shadow-[0_0_0_3px_color-mix(in_oklch,var(--primary)_18%,transparent)]",
+        )}
+      >
         {voiceSupported && (
           <button
             type="button"
             onClick={toggleVoice}
             title={listening ? "Stop listening" : "Speak your deadline"}
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition ${
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-xl",
               listening
-                ? "animate-pulse bg-rose-500/90 text-white"
-                : "bg-white/[0.06] text-white/70 hover:bg-white/[0.12]"
-            }`}
+                ? "glass-primary text-primary-foreground animate-pulse"
+                : "glass-btn text-foreground/80",
+            )}
           >
-            <MicIcon />
+            {listening ? <Square className="size-4" /> : <Mic className="size-4" />}
           </button>
         )}
         <textarea
+          ref={taRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -106,32 +124,24 @@ export function Composer({
             }
           }}
           rows={1}
-          placeholder={listening ? "Listening…" : "Type or speak a messy deadline…"}
-          className="max-h-32 min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+          placeholder={listening ? "Listening…" : "Describe a messy deadline — I'll plan and act…"}
+          className="max-h-40 flex-1 resize-none bg-transparent px-2 py-2 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
         />
         <button
           type="button"
           onClick={submit}
           disabled={disabled || !text.trim()}
-          className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 px-4 text-sm font-semibold text-white transition enabled:hover:brightness-110 disabled:opacity-40"
+          className="glass-primary flex size-9 shrink-0 items-center justify-center rounded-xl text-primary-foreground disabled:opacity-40"
+          title="Handle it"
         >
-          {disabled ? "Working…" : "Handle it"}
+          <ArrowUp className="size-4" />
         </button>
       </div>
-      <p className="mt-1.5 px-1 text-[11px] text-white/30">
-        Enter to send · Shift+Enter for newline{voiceSupported ? " · 🎙 mic for voice" : ""}
+      <p className="mt-2 px-1 text-[11px] text-muted-foreground/70">
+        <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to send ·
+        <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Shift+Enter</kbd> newline
+        {voiceSupported && <span> · mic for voice</span>}
       </p>
     </div>
-  );
-}
-
-function MicIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="23" />
-      <line x1="8" y1="23" x2="16" y2="23" />
-    </svg>
   );
 }

@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
 import type { ActionLogEntry, Proposal, Task } from "@/lib/types";
 import { ActionLog } from "@/components/ActionLog";
 import { TaskBoard } from "@/components/TaskBoard";
 import { Composer } from "@/components/Composer";
 import { GoogleStatus } from "@/components/GoogleStatus";
 import { ProactiveScan } from "@/components/ProactiveScan";
+import { Hero } from "@/components/Hero";
+import { TextShimmer } from "@/components/agent-elements/text-shimmer";
+import { BackgroundFX } from "@/components/BackgroundFX";
+import { Reveal } from "@/components/Reveal";
 
 interface ChatMessage {
   role: "user" | "agent";
@@ -20,17 +25,12 @@ interface AppState {
   google: { connected: boolean; configured: boolean; email: string | null };
 }
 
-const EXAMPLES = [
-  "Essay on climate policy due Friday 5pm, and I need to email Prof. Lee for an extension just in case.",
-  "Tax filing deadline next Tuesday — I haven't started and I have receipts to sort.",
-  "Final-round interview at Acme on Thursday 2pm. Help me not bomb it.",
-];
-
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [state, setState] = useState<AppState | null>(null);
   const [busy, setBusy] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+  const appRef = useRef<HTMLDivElement>(null);
 
   const refreshState = useCallback(async () => {
     const res = await fetch("/api/state", { cache: "no-store" });
@@ -40,9 +40,7 @@ export default function Home() {
   useEffect(() => {
     refreshState();
     const params = new URLSearchParams(window.location.search);
-    if (params.get("google")) {
-      window.history.replaceState({}, "", "/");
-    }
+    if (params.get("google")) window.history.replaceState({}, "", "/");
   }, [refreshState]);
 
   useEffect(() => {
@@ -53,6 +51,7 @@ export default function Home() {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || busy) return;
+      appRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       setMessages((m) => [...m, { role: "user", text: trimmed }]);
       setBusy(true);
       try {
@@ -68,10 +67,7 @@ export default function Home() {
         ]);
         await refreshState();
       } catch {
-        setMessages((m) => [
-          ...m,
-          { role: "agent", text: "Network error — please try again." },
-        ]);
+        setMessages((m) => [...m, { role: "agent", text: "Network error — please try again." }]);
       } finally {
         setBusy(false);
       }
@@ -80,82 +76,86 @@ export default function Home() {
   );
 
   return (
-    <div className="mx-auto flex h-screen w-full max-w-7xl flex-col gap-4 p-4 lg:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-lg font-black text-white shadow-lg">
-            C
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 lg:px-6">
+      <BackgroundFX />
+      {/* Nav */}
+      <header className="glass-soft sticky top-0 z-20 -mx-4 flex items-center justify-between border-b border-white/5 px-4 py-3 lg:-mx-6 lg:px-6">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet-500 shadow-sm">
+            <Sparkles className="size-4 text-white" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold leading-tight">ClutchAI</h1>
-            <p className="text-xs text-white/50">
-              The last-minute life saver — it plans, prioritizes &amp; <em>acts</em>.
-            </p>
+          <div className="leading-none">
+            <span className="text-sm font-semibold tracking-tight">ClutchAI</span>
+            <span className="ml-2 hidden text-xs text-muted-foreground sm:inline">
+              the last-minute life saver
+            </span>
           </div>
         </div>
         <GoogleStatus google={state?.google} onChange={refreshState} />
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur">
-          <div ref={chatRef} className="scroll-thin flex-1 space-y-4 overflow-y-auto p-5">
-            {messages.length === 0 && (
-              <div className="space-y-4">
-                <p className="text-sm text-white/60">
-                  Dump your messiest deadline below. I&apos;ll break it down, rank what&apos;s
-                  urgent, block real time, and draft what I can — then show you exactly what I
-                  handled.
+      <Hero onExample={send} />
+
+      {/* App */}
+      <section ref={appRef} className="scroll-mt-20 pb-10">
+        <div className="grid h-[78vh] min-h-[560px] grid-cols-1 gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          {/* Conversation */}
+          <Reveal className="flex min-h-0 flex-col" style={{ height: "100%" }}>
+          <div className="glass flex h-full min-h-0 flex-col rounded-2xl">
+            <div className="flex items-center gap-2 border-b px-4 py-2.5">
+              <span className="size-2 rounded-full bg-primary" />
+              <h2 className="text-[13px] font-semibold">Conversation</h2>
+            </div>
+            <div ref={chatRef} className="scroll-thin flex-1 space-y-4 overflow-y-auto p-4">
+              {messages.length === 0 && (
+                <p className="px-1 pt-2 text-sm leading-relaxed text-muted-foreground">
+                  Drop your messiest deadline below — or pick an example above. I&apos;ll break it
+                  down, rank what&apos;s urgent, block real time, draft what I can, then show you
+                  exactly what I handled.
                 </p>
-                <div className="space-y-2">
-                  {EXAMPLES.map((ex) => (
-                    <button
-                      key={ex}
-                      onClick={() => send(ex)}
-                      className="block w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm text-white/80 transition hover:border-indigo-400/40 hover:bg-white/[0.07]"
-                    >
-                      {ex}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
-              >
-                <div
-                  className={
-                    m.role === "user"
-                      ? "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-indigo-500/90 px-4 py-2.5 text-sm text-white"
-                      : "max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm text-white/90"
-                  }
-                >
-                  {m.text}
+              {messages.map((m, i) => (
+                <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                  <div
+                    className={
+                      m.role === "user"
+                        ? "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-3.5 py-2 text-sm text-primary-foreground"
+                        : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-sm border bg-background/50 px-3.5 py-2 text-sm text-foreground/90"
+                    }
+                  >
+                    {m.text}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {busy && (
-              <div className="flex items-center gap-2 text-sm text-white/50">
-                <span className="inline-flex gap-1">
-                  <Dot /> <Dot delay="150ms" /> <Dot delay="300ms" />
-                </span>
-                ClutchAI is planning &amp; taking action…
-              </div>
-            )}
+              {busy && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="inline-flex gap-1">
+                    <Dot /> <Dot delay="150ms" /> <Dot delay="300ms" />
+                  </span>
+                  <TextShimmer className="text-sm font-medium" duration={1.6}>
+                    Planning &amp; taking action…
+                  </TextShimmer>
+                </div>
+              )}
+            </div>
+            <div className="border-t border-white/5">
+              <Composer onSend={send} disabled={busy} />
+            </div>
           </div>
+          </Reveal>
 
-          <Composer onSend={send} disabled={busy} />
-        </section>
-
-        <section className="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto">
-          <ProactiveScan proposals={state?.proposals ?? []} onChange={refreshState} />
-          <ActionLog actions={state?.actions ?? []} />
-          <TaskBoard tasks={state?.tasks ?? []} />
-        </section>
-      </div>
+          {/* Right column */}
+          <Reveal className="min-h-0" style={{ height: "100%" }}>
+          <div className="scroll-thin flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-0.5">
+            <ProactiveScan proposals={state?.proposals ?? []} onChange={refreshState} />
+            <ActionLog actions={state?.actions ?? []} />
+            <TaskBoard tasks={state?.tasks ?? []} />
+          </div>
+          </Reveal>
+        </div>
+      </section>
     </div>
   );
 }
@@ -163,7 +163,7 @@ export default function Home() {
 function Dot({ delay = "0ms" }: { delay?: string }) {
   return (
     <span
-      className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-white/60"
+      className="inline-block size-1.5 animate-bounce rounded-full bg-muted-foreground"
       style={{ animationDelay: delay }}
     />
   );
